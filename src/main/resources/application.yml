@@ -1,0 +1,50 @@
+server:
+  port: 8090
+spring:
+  application:
+    name: fastticket-gateway
+  jackson:
+    default-property-inclusion: NON_NULL
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AUTH_SERVER_URL:http://localhost:9500}
+          jwk-set-uri: ${JWK_URL:http://localhost:9500/.well-known/jwks.json}
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: ${USER_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: ${RATE_REQUEST_SECOND:5}
+                redis-rate-limiter.burstCapacity: ${RATE_MAX_REQUEST_SECOND:10}
+                redis-rate-limiter.requestedTokens: ${RATE_TOKEN_REQUEST:1}
+                key-resolver: "#{@ipKeyResolver}"
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: ${REDIS_TIMEOUT:2000ms}
+auth-service:
+  url: ${AUTH_URL:http://localhost:8080}
+jwt:
+  secret: ${JWT_SECRET:secret}
