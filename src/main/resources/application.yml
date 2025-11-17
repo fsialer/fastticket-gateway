@@ -13,32 +13,21 @@ spring:
           jwk-set-uri: ${JWK_URL:http://localhost:9500/.well-known/jwks.json}
   cloud:
     gateway:
-      routes:
-        - id: user-service
-          uri: ${USER_URL:http://localhost:8080}
-          predicates:
-            - Path=/api/v1/users/**
-          filters:
-            - StripPrefix=1
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: ${RATE_REQUEST_SECOND:5}
-                redis-rate-limiter.burstCapacity: ${RATE_MAX_REQUEST_SECOND:10}
-                redis-rate-limiter.requestedTokens: ${RATE_TOKEN_REQUEST:1}
-                key-resolver: "#{@ipKeyResolver}"
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOriginPatterns: "*"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-            allowedHeaders: "*"
-            allowCredentials: true
-            maxAge: 3600
+      server:
+        webflux:
+          routes:
+            - id: user-service
+              uri: ${USER_URL:http://localhost:8080}
+              predicates:
+                - Path=/api/v1/users/**
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: ${RATE_REQUEST_SECOND:5}
+                    redis-rate-limiter.burstCapacity: ${RATE_MAX_REQUEST_SECOND:10}
+                    redis-rate-limiter.requestedTokens: ${RATE_TOKEN_REQUEST:1}
+                    key-resolver: "#{@ipKeyResolver}"
   data:
     redis:
       host: ${REDIS_HOST:localhost}
